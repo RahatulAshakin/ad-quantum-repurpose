@@ -5,8 +5,8 @@ __pycache__/
 *.pyc
 
 # Docking/logs
-results/docking/*/*.log
-results/docking/*/*_tmp.pdbqt
+# results/docking/*/*.log
+# results/docking/*/*_tmp.pdbqt
 
 # VSCode/OS
 .vscode/

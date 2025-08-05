@@ -1,0 +1,100 @@
+.
+├── .gitattributes
+├── .gitignore
+├── PROJECT_TREE.txt
+├── README.md
+├── data
+│   ├── processed
+│   │   ├── ligands
+│   │   │   ├── donepezil.pdb
+│   │   │   ├── donepezil.pdbqt
+│   │   │   ├── donepezil.sdf
+│   │   │   ├── fluoxetine.pdb
+│   │   │   ├── fluoxetine.pdbqt
+│   │   │   ├── fluoxetine.sdf
+│   │   │   ├── galantamine.pdb
+│   │   │   ├── galantamine.pdbqt
+│   │   │   ├── galantamine.sdf
+│   │   │   ├── memantine.pdb
+│   │   │   ├── memantine.pdbqt
+│   │   │   ├── memantine.sdf
+│   │   │   ├── nilvadipine.pdb
+│   │   │   ├── nilvadipine.pdbqt
+│   │   │   ├── nilvadipine.sdf
+│   │   │   ├── rasagiline.pdb
+│   │   │   ├── rasagiline.pdbqt
+│   │   │   ├── rasagiline.sdf
+│   │   │   ├── riluzole.pdb
+│   │   │   ├── riluzole.pdbqt
+│   │   │   ├── riluzole.sdf
+│   │   │   ├── rivastigmine.pdb
+│   │   │   ├── rivastigmine.pdbqt
+│   │   │   ├── rivastigmine.sdf
+│   │   │   ├── selegiline.pdb
+│   │   │   ├── selegiline.pdbqt
+│   │   │   ├── selegiline.sdf
+│   │   │   ├── sertraline.pdb
+│   │   │   ├── sertraline.pdbqt
+│   │   │   └── sertraline.sdf
+│   │   └── proteins
+│   │       ├── BACE1_prepared.pdb
+│   │       ├── BACE1_prepared.pdbqt
+│   │       ├── grid_center_xyz.txt
+│   │       └── grid_size_angs.txt
+│   └── raw
+│       ├── ligands
+│       │   └── seed_smiles.csv
+│       └── proteins
+│           ├── 4DVF.cif
+│           └── 4DVF.pdb
+├── envs
+│   └── wsl_adquant_q.yml
+├── notebooks
+│   ├── .ipynb_checkpoints
+│   │   ├── 00_env_check.ipynb-checkpoint.ipynb
+│   │   ├── 02_protein_prep-checkpoint.ipynb
+│   │   ├── 03_ligand_prep-checkpoint.ipynb
+│   │   ├── 04_docking_baseline-checkpoint.ipynb
+│   │   ├── 06_vqe_workflow-checkpoint.ipynb
+│   │   └── 07_ranking_report-checkpoint.ipynb
+│   ├── 00_env_check.ipynb.ipynb
+│   ├── 02_protein_prep.ipynb
+│   ├── 03_ligand_prep.ipynb
+│   ├── 04_docking_baseline.ipynb
+│   └── 07_ranking_report.ipynb
+├── results
+│   ├── docking
+│   │   ├── docking_results.csv
+│   │   ├── donepezil.log
+│   │   ├── donepezil_best.pdbqt
+│   │   ├── fluoxetine.log
+│   │   ├── fluoxetine_best.pdbqt
+│   │   ├── galantamine.log
+│   │   ├── galantamine_best.pdbqt
+│   │   ├── memantine.log
+│   │   ├── memantine_best.pdbqt
+│   │   ├── nilvadipine.log
+│   │   ├── nilvadipine_best.pdbqt
+│   │   ├── rasagiline.log
+│   │   ├── rasagiline_best.pdbqt
+│   │   ├── riluzole.log
+│   │   ├── riluzole_best.pdbqt
+│   │   ├── rivastigmine.log
+│   │   ├── rivastigmine_best.pdbqt
+│   │   ├── selegiline.log
+│   │   ├── selegiline_best.pdbqt
+│   │   ├── sertraline.log
+│   │   └── sertraline_best.pdbqt
+│   ├── qm
+│   ├── quantum
+│   │   └── vqe_h2.json
+│   └── reports
+│       ├── docking_bar.png
+│       ├── ranking.md
+│       ├── ranking_table.csv
+│       └── vqe_demo.md
+├── scripts
+│   └── 06_vqe_workflow.py
+└── src
+
+18 directories, 80 files
