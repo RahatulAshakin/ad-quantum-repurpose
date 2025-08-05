@@ -1,0 +1,11 @@
+name,smiles
+donepezil,CC1=CC(=O)OC2=CC=CC=C2C1CCN3CCN(CC3)C4=CC=C(C=C4)OC
+memantine,CC12CCC(CC1)(CC(C2)(C)N)C
+rivastigmine,CCOC(=O)N(C)C1CC2=CC=CC=C2O1
+galantamine,CC1CC2=CC3=C(C(=O)O2)C=CC=C3OC4=CC=CC=C14
+selegiline,CC(C)NCC#CC1=CC=CC=C1
+rasagiline,CC(C)NCC#Cc1ccc(cc1)F
+riluzole,NC1=NC(NC2=CC=CC=C2Cl)=NC(=N1)S
+fluoxetine,CC(C1=CC=C(C=C1)OCC(N)C2=CC=CC=C2)F
+sertraline,Clc1ccc2c(c1)C(NC3CCCC3)C(Cl)CC2
+nilvadipine,CCOC(=O)C1=C(C(=O)N(C)C(=O)C(C)=C1C2=CC=C(Cl)C=C2Cl)C3=CC=CO3

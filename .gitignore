@@ -1,5 +1,14 @@
-data/
-results/
-*.ipynb_checkpoints/
-__pycache__/
+# Envs & caches
 .env
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+
+# Docking/logs
+results/docking/*/*.log
+results/docking/*/*_tmp.pdbqt
+
+# VSCode/OS
+.vscode/
+.DS_Store
+Thumbs.db

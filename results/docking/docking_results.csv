@@ -1,0 +1,11 @@
+ligand,pose_path,log_path,retcode,affinity_kcal_mol,parsed_from
+donepezil,C:\Users\ashak\ad-quantum-repurpose\results\docking\donepezil_best.pdbqt,C:\Users\ashak\ad-quantum-repurpose\results\docking\donepezil.log,0,-8.2,log_table
+galantamine,C:\Users\ashak\ad-quantum-repurpose\results\docking\galantamine_best.pdbqt,C:\Users\ashak\ad-quantum-repurpose\results\docking\galantamine.log,0,-7.6,log_table
+nilvadipine,C:\Users\ashak\ad-quantum-repurpose\results\docking\nilvadipine_best.pdbqt,C:\Users\ashak\ad-quantum-repurpose\results\docking\nilvadipine.log,0,-7.0,log_table
+fluoxetine,C:\Users\ashak\ad-quantum-repurpose\results\docking\fluoxetine_best.pdbqt,C:\Users\ashak\ad-quantum-repurpose\results\docking\fluoxetine.log,0,-6.7,log_table
+sertraline,C:\Users\ashak\ad-quantum-repurpose\results\docking\sertraline_best.pdbqt,C:\Users\ashak\ad-quantum-repurpose\results\docking\sertraline.log,0,-6.6,log_table
+riluzole,C:\Users\ashak\ad-quantum-repurpose\results\docking\riluzole_best.pdbqt,C:\Users\ashak\ad-quantum-repurpose\results\docking\riluzole.log,0,-6.4,log_table
+rivastigmine,C:\Users\ashak\ad-quantum-repurpose\results\docking\rivastigmine_best.pdbqt,C:\Users\ashak\ad-quantum-repurpose\results\docking\rivastigmine.log,0,-6.1,log_table
+memantine,C:\Users\ashak\ad-quantum-repurpose\results\docking\memantine_best.pdbqt,C:\Users\ashak\ad-quantum-repurpose\results\docking\memantine.log,0,-5.9,log_table
+rasagiline,C:\Users\ashak\ad-quantum-repurpose\results\docking\rasagiline_best.pdbqt,C:\Users\ashak\ad-quantum-repurpose\results\docking\rasagiline.log,0,-5.7,log_table
+selegiline,C:\Users\ashak\ad-quantum-repurpose\results\docking\selegiline_best.pdbqt,C:\Users\ashak\ad-quantum-repurpose\results\docking\selegiline.log,0,-5.4,log_table

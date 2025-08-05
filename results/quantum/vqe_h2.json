@@ -1,0 +1,14 @@
+{
+  "system": "H2",
+  "bond_length_A": 0.735,
+  "basis": "sto-3g",
+  "mapper": "Jordan-Wigner",
+  "ansatz": "UCCSD",
+  "optimizer": "SLSQP(maxiter=200)",
+  "energy_hartree": -1.1373060356960982,
+  "energy_eV": -30.947673817219943,
+  "timestamp": "2025-08-05T01:16:25.893325Z",
+  "qiskit_versions": {
+    "note": "verified in adquant_q: qiskit~=1.4, qiskit-nature~=0.7.2"
+  }
+}
