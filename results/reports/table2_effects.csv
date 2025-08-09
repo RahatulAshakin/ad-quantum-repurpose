@@ -1,0 +1,6 @@
+metric,value
+best_affinity,-8.2
+worst_affinity,-5.4
+median_affinity,-6.5
+improvement_%_best_vs_worst,51.851851851851826
+improvement_%_best_vs_median,26.153846153846143
