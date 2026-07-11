@@ -1,0 +1,81 @@
+name: Build corrected resubmission package v4
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: corrected-resubmission
+          environment-file: analysis/environment-corrected.yml
+          cache-environment: true
+          init-shell: bash
+
+      - name: Reconstruct, patch, and verify pipeline
+        shell: bash -el {0}
+        run: |
+          set -euxo pipefail
+          python analysis/reconstruct_corrected_pipeline.py
+          python analysis/apply_pipeline_fixes_v3.py
+          python -m py_compile analysis/corrected_resubmission_pipeline.py
+          which smina
+          which obabel
+
+      - name: Build corrected package
+        shell: bash -el {0}
+        run: |
+          set -uo pipefail
+          mkdir -p results/corrected_resubmission
+          set +e
+          python analysis/corrected_resubmission_pipeline.py --output results/corrected_resubmission 2>&1 | tee results/corrected_resubmission/build_console.log
+          status=${PIPESTATUS[0]}
+          set -e
+          exit "$status"
+
+      - name: Record software versions without blocking output
+        if: always()
+        shell: bash -el {0}
+        run: |
+          {
+            smina --version || true
+            obabel -V || true
+            python - <<'PY'
+          import Bio, matplotlib, numpy, openmm, pandas, requests, scipy, rdkit
+          print("RDKit", getattr(rdkit, "__version__", "unknown"))
+          print("OpenMM", getattr(openmm, "__version__", "unknown"))
+          print("NumPy", numpy.__version__)
+          print("pandas", pandas.__version__)
+          print("SciPy", scipy.__version__)
+          print("Biopython", Bio.__version__)
+          print("matplotlib", matplotlib.__version__)
+          print("requests", requests.__version__)
+          PY
+          } > results/corrected_resubmission/software_versions.txt 2>&1 || true
+
+      - name: List generated files
+        if: always()
+        shell: bash -el {0}
+        run: |
+          find results/corrected_resubmission -maxdepth 5 -type f -printf '%p\t%s bytes\n' | sort || true
+
+      - name: Upload corrected package
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corrected-resubmission-package-v4
+          path: |
+            results/corrected_resubmission
+            analysis/corrected_resubmission_pipeline.py
+            analysis/environment-corrected.yml
+          if-no-files-found: warn
+          retention-days: 14
