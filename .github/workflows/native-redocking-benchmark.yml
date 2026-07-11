@@ -1,0 +1,50 @@
+name: Native redocking benchmark
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: corrected-resubmission
+          environment-file: analysis/environment-corrected.yml
+          cache-environment: true
+          init-shell: bash
+
+      - name: Reconstruct and patch pipeline
+        shell: bash -el {0}
+        run: |
+          set -euxo pipefail
+          python analysis/reconstruct_corrected_pipeline.py
+          python analysis/apply_pipeline_fixes_v3.py
+          python -m py_compile analysis/corrected_resubmission_pipeline.py analysis/native_redocking_benchmark.py
+
+      - name: Run redocking benchmark
+        shell: bash -el {0}
+        run: |
+          set -uo pipefail
+          mkdir -p results/native_redocking_benchmark
+          set +e
+          python analysis/native_redocking_benchmark.py 2>&1 | tee results/native_redocking_benchmark/benchmark_console.log
+          status=${PIPESTATUS[0]}
+          set -e
+          exit "$status"
+
+      - name: Upload benchmark
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-redocking-benchmark
+          path: results/native_redocking_benchmark
+          if-no-files-found: warn
+          retention-days: 14

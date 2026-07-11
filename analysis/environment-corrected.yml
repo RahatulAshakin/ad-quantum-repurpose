@@ -1,0 +1,19 @@
+name: corrected-resubmission
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.11
+  - rdkit
+  - openbabel
+  - pdbfixer
+  - openmm
+  - biopython
+  - numpy
+  - pandas
+  - scipy
+  - matplotlib
+  - pillow
+  - requests
+  - pip

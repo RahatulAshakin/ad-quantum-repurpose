@@ -1,0 +1,122 @@
+name: Build corrected BACE1 resubmission package
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/corrected-resubmission.yml'
+      - 'analysis/environment-corrected.yml'
+      - 'analysis/pipeline_payload/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-package:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - name: Create scientific environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: corrected-resubmission
+          environment-file: analysis/environment-corrected.yml
+          cache-environment: true
+          init-shell: bash
+
+      - name: Install smina
+        run: |
+          set -euo pipefail
+          if ! command -v smina >/dev/null 2>&1; then
+            micromamba install -y -n corrected-resubmission -c conda-forge -c bioconda smina || true
+          fi
+          if ! command -v smina >/dev/null 2>&1; then
+            URL1='https://downloads.sourceforge.net/project/smina/smina.static'
+            URL2='https://sourceforge.net/projects/smina/files/smina.static/download'
+            curl -A 'Mozilla/5.0' -L --fail --retry 5 --retry-delay 5 "$URL1" -o /tmp/smina || \
+              curl -A 'Mozilla/5.0' -L --fail --retry 5 --retry-delay 5 "$URL2" -o /tmp/smina
+            test "$(stat -c%s /tmp/smina)" -gt 1000000
+            file /tmp/smina
+            chmod +x /tmp/smina
+            sudo install -m 0755 /tmp/smina /usr/local/bin/smina
+          fi
+          command -v smina
+          smina --help | head -30
+
+      - name: Materialize and verify corrected pipeline
+        run: |
+          set -euo pipefail
+          cat analysis/pipeline_payload/pipeline.part* | base64 -d | gzip -d > /tmp/corrected_resubmission_pipeline.py
+          observed="$(sha256sum /tmp/corrected_resubmission_pipeline.py | awk '{print $1}')"
+          expected='cf3145cf4e24761fbcaf225f62a440a95b9eb743b921b50974eb204776a64106'
+          test "$observed" = "$expected"
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('/tmp/corrected_resubmission_pipeline.py')
+          text = path.read_text(encoding='utf-8')
+          old = 'if line.startswith(("ATOM  ", "HETATM")) and len(line) > 21 and line[21] == chain:'
+          new = 'if line.startswith(("ATOM  ", "HETATM")) and len(line) > 21 and line[21] == chain and line[17:20].strip() != "HOH":'
+          if text.count(old) != 1:
+              raise RuntimeError(f'Expected one native-chain extraction pattern, found {text.count(old)}')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+          python -m py_compile /tmp/corrected_resubmission_pipeline.py
+          echo "Base payload SHA256: $observed"
+          sha256sum /tmp/corrected_resubmission_pipeline.py
+
+      - name: Record environment
+        run: |
+          set -euo pipefail
+          python --version
+          obabel -V
+          smina --version || true
+          python - <<'PY'
+          import Bio, matplotlib, numpy, openmm, pandas, requests, scipy
+          import rdkit
+          from pdbfixer import PDBFixer
+          print('RDKit', rdkit.__version__)
+          print('OpenMM', openmm.__version__)
+          print('NumPy', numpy.__version__)
+          print('pandas', pandas.__version__)
+          print('SciPy', scipy.__version__)
+          print('Biopython', Bio.__version__)
+          print('matplotlib', matplotlib.__version__)
+          print('requests', requests.__version__)
+          print('PDBFixer import', PDBFixer)
+          PY
+
+      - name: Run corrected computational pipeline
+        run: |
+          set -euo pipefail
+          rm -rf results/corrected_resubmission
+          python /tmp/corrected_resubmission_pipeline.py \
+            --output results/corrected_resubmission \
+            --pdb data/raw/proteins/4DVF.pdb
+          cp /tmp/corrected_resubmission_pipeline.py results/corrected_resubmission/corrected_resubmission_pipeline.py
+
+      - name: Inventory and integrity check
+        if: always()
+        run: |
+          if [ -d results/corrected_resubmission ]; then
+            find results/corrected_resubmission -type f -printf '%P\t%s bytes\n' | sort
+            find results/corrected_resubmission -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum > results/corrected_resubmission/SHA256SUMS.txt
+          fi
+
+      - name: Upload corrected package
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corrected-bace1-resubmission-package
+          path: results/corrected_resubmission
+          if-no-files-found: error
+          retention-days: 14
