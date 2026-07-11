@@ -1,0 +1,87 @@
+name: native-redocking-sensitivity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "analysis/native_sensitivity.py.gz.b64"
+      - ".github/workflows/native-redocking-sensitivity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-redocking-sensitivity:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Reconstruct and verify sensitivity script
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "3cc33a197bdf0fc7a9af818fa8d2a10ae3f5b1d4bc883f9f55ecb044f0e3d905  analysis/native_sensitivity.py.gz.b64" | sha256sum -c -
+          base64 --decode analysis/native_sensitivity.py.gz.b64 | gzip --decompress > /tmp/native_redocking_sensitivity.py
+          echo "9db03bc2fd988cc8c4e827722908818f5379c35bd73df5ea56a3c2a0755c830c  /tmp/native_redocking_sensitivity.py" | sha256sum -c -
+
+      - name: Set up scientific environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: corrected-bace1
+          create-args: >-
+            python=3.11
+            rdkit
+            openbabel
+            pdbfixer
+            openmm
+            pandas
+            numpy
+            matplotlib
+          init-shell: bash
+          cache-environment: true
+          post-cleanup: all
+
+      - name: Install and verify smina
+        shell: micromamba-shell {0}
+        run: |
+          set -euo pipefail
+          if ! micromamba install -y -n corrected-bace1 -c conda-forge -c bioconda smina; then
+            curl -L --retry 5 --retry-delay 3 -o "$CONDA_PREFIX/bin/smina" "https://sourceforge.net/projects/smina/files/smina.static/download"
+            chmod +x "$CONDA_PREFIX/bin/smina"
+          fi
+          command -v smina
+          smina --help >/dev/null
+          python -m py_compile /tmp/native_redocking_sensitivity.py
+
+      - name: Run native-inhibitor redocking sensitivity
+        shell: micromamba-shell {0}
+        run: |
+          set -euo pipefail
+          python /tmp/native_redocking_sensitivity.py \
+            --pdb data/raw/proteins/4DVF.pdb \
+            --output results/native_redocking_sensitivity
+
+      - name: Archive sensitivity package
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p results
+          if [ -d results/native_redocking_sensitivity ]; then
+            cd results
+            zip -r native_redocking_sensitivity.zip native_redocking_sensitivity
+          fi
+
+      - name: Upload sensitivity package
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-redocking-sensitivity
+          path: |
+            results/native_redocking_sensitivity
+            results/native_redocking_sensitivity.zip
+          if-no-files-found: warn
+          retention-days: 14

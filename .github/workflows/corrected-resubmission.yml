@@ -1,0 +1,127 @@
+name: corrected-resubmission-package
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "analysis/.corrected_pipeline_parts/**"
+      - ".github/workflows/corrected-resubmission.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-corrected-package:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Reconstruct and verify analysis pipeline
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat analysis/.corrected_pipeline_parts/part*.b64 > /tmp/corrected_pipeline.py.gz.b64
+          echo "2af3ab8ad43467fec515c96ddc8db55f2b8ff5cac583431df380698c8b2da560  /tmp/corrected_pipeline.py.gz.b64" | sha256sum -c -
+          base64 --decode /tmp/corrected_pipeline.py.gz.b64 | gzip --decompress > /tmp/corrected_resubmission_pipeline.py
+          echo "2b5baee416786a5d9e37573ea7da0a1501486a6a255a7fcb13e6f5f65f0cbb0c  /tmp/corrected_resubmission_pipeline.py" | sha256sum -c -
+
+      - name: Create water-free 4DVF input for native validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('data/raw/proteins/4DVF.pdb')
+          target = Path('/tmp/4DVF_no_crystallographic_waters.pdb')
+          removed_serials = set()
+          kept = []
+          for line in source.read_text(encoding='utf-8', errors='replace').splitlines():
+              if line.startswith(('ATOM  ', 'HETATM')) and line[17:20].strip() in {'HOH', 'WAT', 'DOD'}:
+                  try:
+                      removed_serials.add(int(line[6:11]))
+                  except ValueError:
+                      pass
+                  continue
+              kept.append(line)
+          final = []
+          for line in kept:
+              if line.startswith('CONECT'):
+                  values = []
+                  for token in line[6:].split():
+                      try:
+                          values.append(int(token))
+                      except ValueError:
+                          pass
+                  if any(value in removed_serials for value in values):
+                      continue
+              final.append(line)
+          target.write_text('\n'.join(final) + '\n', encoding='utf-8')
+          print(f'Removed {len(removed_serials)} crystallographic water atoms; wrote {target}')
+          PY
+
+      - name: Set up scientific environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-name: corrected-bace1
+          create-args: >-
+            python=3.11
+            rdkit
+            openbabel
+            pdbfixer
+            openmm
+            biopython
+            pandas
+            numpy
+            scipy
+            matplotlib
+            pillow
+            requests
+          init-shell: bash
+          cache-environment: true
+          post-cleanup: all
+
+      - name: Install and verify smina
+        shell: micromamba-shell {0}
+        run: |
+          set -euo pipefail
+          if ! micromamba install -y -n corrected-bace1 -c conda-forge -c bioconda smina; then
+            curl -L --retry 5 --retry-delay 3 -o "$CONDA_PREFIX/bin/smina" "https://sourceforge.net/projects/smina/files/smina.static/download"
+            chmod +x "$CONDA_PREFIX/bin/smina"
+          fi
+          command -v smina
+          smina --help >/dev/null
+          obabel -V
+          python -m py_compile /tmp/corrected_resubmission_pipeline.py
+
+      - name: Run corrected BACE1 computational analysis
+        shell: micromamba-shell {0}
+        run: |
+          set -euo pipefail
+          python /tmp/corrected_resubmission_pipeline.py \
+            --output results/corrected_resubmission \
+            --pdb /tmp/4DVF_no_crystallographic_waters.pdb
+
+      - name: Archive complete package
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p results
+          if [ -d results/corrected_resubmission ]; then
+            cd results
+            zip -r corrected_resubmission_package.zip corrected_resubmission
+          fi
+
+      - name: Upload corrected package
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corrected-resubmission-package
+          path: |
+            results/corrected_resubmission
+            results/corrected_resubmission_package.zip
+          if-no-files-found: warn
+          retention-days: 14
