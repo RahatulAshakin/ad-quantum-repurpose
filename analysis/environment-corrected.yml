@@ -1,6 +1,7 @@
 name: corrected-resubmission
 channels:
   - conda-forge
+  - bioconda
   - defaults
 dependencies:
   - python=3.11
@@ -15,3 +16,4 @@ dependencies:
   - matplotlib
   - pillow
   - requests
+  - smina
