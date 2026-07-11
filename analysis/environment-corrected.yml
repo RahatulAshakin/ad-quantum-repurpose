@@ -16,4 +16,4 @@ dependencies:
   - matplotlib
   - pillow
   - requests
-  - smina
+  - pip
