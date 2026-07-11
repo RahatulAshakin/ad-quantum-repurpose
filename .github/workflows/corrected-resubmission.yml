@@ -60,8 +60,19 @@ jobs:
           observed="$(sha256sum /tmp/corrected_resubmission_pipeline.py | awk '{print $1}')"
           expected='cf3145cf4e24761fbcaf225f62a440a95b9eb743b921b50974eb204776a64106'
           test "$observed" = "$expected"
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('/tmp/corrected_resubmission_pipeline.py')
+          text = path.read_text(encoding='utf-8')
+          old = 'if line.startswith(("ATOM  ", "HETATM")) and len(line) > 21 and line[21] == chain:'
+          new = 'if line.startswith(("ATOM  ", "HETATM")) and len(line) > 21 and line[21] == chain and line[17:20].strip() != "HOH":'
+          if text.count(old) != 1:
+              raise RuntimeError(f'Expected one native-chain extraction pattern, found {text.count(old)}')
+          path.write_text(text.replace(old, new), encoding='utf-8')
+          PY
           python -m py_compile /tmp/corrected_resubmission_pipeline.py
-          echo "Pipeline SHA256: $observed"
+          echo "Base payload SHA256: $observed"
+          sha256sum /tmp/corrected_resubmission_pipeline.py
 
       - name: Record environment
         run: |
