@@ -29,25 +29,38 @@ jobs:
           base64 --decode /tmp/corrected_pipeline.py.gz.b64 | gzip --decompress > /tmp/corrected_resubmission_pipeline.py
           echo "2b5baee416786a5d9e37573ea7da0a1501486a6a255a7fcb13e6f5f65f0cbb0c  /tmp/corrected_resubmission_pipeline.py" | sha256sum -c -
 
-      - name: Apply native-ligand solvent exclusion correction
+      - name: Create water-free 4DVF input for native validation
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-          path = Path('/tmp/corrected_resubmission_pipeline.py')
-          text = path.read_text(encoding='utf-8')
-          old_parse = '''        element = atom_element_from_pdb_line(line)\n        if not is_heavy_element(element):\n            continue\n'''
-          new_parse = '''        resname = line[17:20].strip()\n        if resname in {"HOH", "WAT", "DOD"}:\n            continue\n        element = atom_element_from_pdb_line(line)\n        if not is_heavy_element(element):\n            continue\n'''
-          if old_parse not in text:
-              raise SystemExit('Expected parse_atoms_from_pdb block not found')
-          text = text.replace(old_parse, new_parse, 1)
-          old_extract = '''        if line.startswith(("ATOM  ", "HETATM")) and len(line) > 21 and line[21] == chain:\n            alternate = line[16] if len(line) > 16 else " "\n'''
-          new_extract = '''        if (line.startswith(("ATOM  ", "HETATM")) and len(line) > 21 and line[21] == chain\n                and line[17:20].strip() not in {"HOH", "WAT", "DOD"}):\n            alternate = line[16] if len(line) > 16 else " "\n'''
-          if old_extract not in text:
-              raise SystemExit('Expected extract_native_chain_pdb block not found')
-          text = text.replace(old_extract, new_extract, 1)
-          path.write_text(text, encoding='utf-8')
+          source = Path('data/raw/proteins/4DVF.pdb')
+          target = Path('/tmp/4DVF_no_crystallographic_waters.pdb')
+          removed_serials = set()
+          kept = []
+          for line in source.read_text(encoding='utf-8', errors='replace').splitlines():
+              if line.startswith(('ATOM  ', 'HETATM')) and line[17:20].strip() in {'HOH', 'WAT', 'DOD'}:
+                  try:
+                      removed_serials.add(int(line[6:11]))
+                  except ValueError:
+                      pass
+                  continue
+              kept.append(line)
+          final = []
+          for line in kept:
+              if line.startswith('CONECT'):
+                  values = []
+                  for token in line[6:].split():
+                      try:
+                          values.append(int(token))
+                      except ValueError:
+                          pass
+                  if any(value in removed_serials for value in values):
+                      continue
+              final.append(line)
+          target.write_text('\n'.join(final) + '\n', encoding='utf-8')
+          print(f'Removed {len(removed_serials)} crystallographic water atoms; wrote {target}')
           PY
 
       - name: Set up scientific environment
@@ -90,7 +103,7 @@ jobs:
           set -euo pipefail
           python /tmp/corrected_resubmission_pipeline.py \
             --output results/corrected_resubmission \
-            --pdb data/raw/proteins/4DVF.pdb
+            --pdb /tmp/4DVF_no_crystallographic_waters.pdb
 
       - name: Archive complete package
         if: always()
